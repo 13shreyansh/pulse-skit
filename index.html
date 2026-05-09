@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse — Demo Skit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            width: 100vw;
+            height: 100vh;
+            cursor: none;
+            user-select: none;
+        }
+
+        /* Scene Container */
+        #scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+        }
+
+        /* Scene Image */
+        .scene-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            will-change: transform, opacity;
+        }
+
+        .scene-image.active {
+            opacity: 1;
+        }
+
+        /* Ken Burns Animations */
+        @keyframes kenBurnsZoomIn {
+            from { transform: scale(1); }
+            to { transform: scale(1.08); }
+        }
+
+        @keyframes kenBurnsZoomOut {
+            from { transform: scale(1.08); }
+            to { transform: scale(1); }
+        }
+
+        @keyframes kenBurnsPanRight {
+            from { transform: scale(1.05) translateX(-2%); }
+            to { transform: scale(1.05) translateX(2%); }
+        }
+
+        @keyframes kenBurnsPanLeft {
+            from { transform: scale(1.05) translateX(2%); }
+            to { transform: scale(1.05) translateX(-2%); }
+        }
+
+        @keyframes shakeImpact {
+            0% { transform: scale(1.02) translate(0, 0); }
+            10% { transform: scale(1.02) translate(-8px, 4px); }
+            20% { transform: scale(1.02) translate(6px, -6px); }
+            30% { transform: scale(1.02) translate(-4px, 2px); }
+            40% { transform: scale(1.02) translate(4px, -2px); }
+            50% { transform: scale(1.02) translate(-2px, 4px); }
+            60% { transform: scale(1.02) translate(2px, -2px); }
+            70% { transform: scale(1.02) translate(-1px, 1px); }
+            80% { transform: scale(1.02) translate(1px, -1px); }
+            100% { transform: scale(1.02) translate(0, 0); }
+        }
+
+        @keyframes vibrate {
+            0% { transform: scale(1.02) translate(0, 0); }
+            25% { transform: scale(1.02) translate(1px, -1px); }
+            50% { transform: scale(1.02) translate(-1px, 1px); }
+            75% { transform: scale(1.02) translate(1px, 0); }
+            100% { transform: scale(1.02) translate(0, 0); }
+        }
+
+        .anim-zoom-in { animation: kenBurnsZoomIn 8s ease-out forwards; }
+        .anim-zoom-out { animation: kenBurnsZoomOut 8s ease-out forwards; }
+        .anim-pan-right { animation: kenBurnsPanRight 8s ease-in-out forwards; }
+        .anim-pan-left { animation: kenBurnsPanLeft 8s ease-in-out forwards; }
+        .anim-shake { animation: shakeImpact 0.6s ease-out forwards; }
+        .anim-vibrate { animation: vibrate 0.15s linear infinite; }
+
+        /* Text Overlays */
+        #text-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .overlay-text {
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        .overlay-text.visible {
+            opacity: 1;
+        }
+
+        /* Comedy text style */
+        .text-comedy {
+            position: absolute;
+            bottom: 12%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 2.8vw;
+            font-weight: 600;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.5);
+            letter-spacing: 0.02em;
+        }
+
+        /* Hospital rejection text style */
+        .text-rejection {
+            color: #ff2d2d;
+            font-size: 5vw;
+            font-weight: 900;
+            text-shadow: 0 0 30px rgba(255,0,0,0.4);
+            letter-spacing: 0.05em;
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        }
+
+        .text-rejection.visible {
+            transform: scale(1);
+        }
+
+        /* Panicker text style */
+        .text-panicker {
+            position: absolute;
+            bottom: 12%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 3.5vw;
+            font-weight: 800;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.9);
+            animation: vibrate 0.1s linear infinite;
+        }
+
+        /* Statistics text style */
+        .text-stats {
+            color: #fff;
+            font-size: 2.2vw;
+            font-weight: 300;
+            line-height: 1.6;
+            max-width: 70%;
+            text-align: center;
+            letter-spacing: 0.01em;
+        }
+
+        .text-stats.emphasis {
+            font-size: 2.8vw;
+            font-weight: 500;
+        }
+
+        /* Bridge text style */
+        .text-bridge {
+            color: #fff;
+            font-size: 3vw;
+            font-weight: 300;
+            letter-spacing: 0.03em;
+            font-style: italic;
+        }
+
+        /* Phone screen overlay */
+        #phone-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30vw;
+            max-width: 400px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.8);
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            z-index: 15;
+        }
+
+        #phone-overlay.visible {
+            opacity: 1;
+        }
+
+        #phone-overlay img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Hospital sign overlay */
+        #sign-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 35vw;
+            max-width: 500px;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 10px 60px rgba(0,0,0,0.7);
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            z-index: 15;
+        }
+
+        #sign-overlay.visible {
+            opacity: 1;
+        }
+
+        #sign-overlay img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Desaturation filter */
+        .desaturate {
+            filter: saturate(0.3) brightness(0.8);
+            transition: filter 2s ease;
+        }
+
+        .full-desaturate {
+            filter: saturate(0) brightness(0.6);
+            transition: filter 2s ease;
+        }
+
+        /* Scene counter (hidden during recording, visible during rehearsal) */
+        #scene-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: rgba(255,255,255,0.3);
+            font-size: 14px;
+            font-family: monospace;
+            z-index: 100;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        body.recording #scene-counter {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* Progress bar */
+        #progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: rgba(255,255,255,0.3);
+            z-index: 100;
+            transition: width 0.3s ease;
+        }
+
+        body.recording #progress-bar {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* Smooth text entrance animation */
+        @keyframes textSlideUp {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .text-stats.visible, .text-bridge.visible {
+            animation: textSlideUp 0.8s ease forwards;
+        }
+
+        /* Rejection text slam animation */
+        @keyframes slamIn {
+            0% { transform: scale(2.5); opacity: 0; }
+            60% { transform: scale(0.9); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .text-rejection.visible {
+            animation: slamIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Transition overlay for hard cuts */
+        #transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+            transition: opacity 0.1s;
+        }
+
+        /* Instructions overlay */
+        #instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            font-size: 1.2vw;
+            line-height: 2.2;
+            z-index: 200;
+            transition: opacity 1s ease;
+            pointer-events: none;
+        }
+
+        #instructions.hidden {
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        #instructions h2 {
+            font-size: 2vw;
+            margin-bottom: 20px;
+            color: #fff;
+            font-weight: 300;
+        }
+
+        #instructions kbd {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div id="scene-container"></div>
+    <div id="text-overlay"></div>
+    <div id="phone-overlay"><img src="assets/scene-04b-phone-screen.png" alt="Phone screen"></div>
+    <div id="sign-overlay"><img src="assets/hospital-sign-lunch.png" alt="Hospital sign"></div>
+    <div id="transition-overlay"></div>
+    <div id="scene-counter">Scene 0 / 14</div>
+    <div id="progress-bar"></div>
+
+    <div id="instructions">
+        <h2>Pulse — Demo Skit Player</h2>
+        <p><kbd>Space</kbd> or <kbd>→</kbd> — Next scene</p>
+        <p><kbd>←</kbd> — Previous scene</p>
+        <p><kbd>F</kbd> — Fullscreen</p>
+        <p><kbd>R</kbd> — Restart</p>
+        <p><kbd>H</kbd> — Hide/show UI</p>
+        <p><kbd>1-9, 0</kbd> — Jump to scene</p>
+        <p><kbd>A</kbd> — Auto-play (3.5s per scene)</p>
+        <br>
+        <p style="opacity:0.5">Press Space or click to begin</p>
+    </div>
+
+    <script>
+        // Scene definitions
+        const scenes = [
+            {
+                id: 1,
+                image: 'assets/scene-01-marina-bay.png',
+                animation: 'anim-zoom-in',
+                transition: 'crossfade',
+                text: null,
+                overlay: null,
+                filter: null
+            },
+            {
+                id: 2,
+                image: 'assets/scene-02-cyclist.png',
+                animation: 'anim-pan-right',
+                transition: 'cut',
+                text: null,
+                overlay: null,
+                filter: null
+            },
+            {
+                id: 3,
+                image: 'assets/scene-03-fall.png',
+                animation: 'anim-shake',
+                transition: 'crossfade',
+                text: null,
+                overlay: null,
+                filter: null
+            },
+            {
+                id: 4,
+                image: 'assets/scene-04-google-doctor.png',
+                animation: 'anim-zoom-in',
+                transition: 'crossfade',
+                text: null,
+                overlay: null,
+                filter: null
+            },
+            {
+                id: '4b',
+                image: null,
+                animation: null,
+                transition: 'cut',
+                text: null,
+                overlay: 'phone',
+                filter: null
+            },
+            {
+                id: 5,
+                image: 'assets/scene-05-overconfident-helper.png',
+                animation: 'anim-zoom-in',
+                transition: 'cut',
+                text: { content: 'Trust the process bro', style: 'text-comedy', delay: 1000 },
+                overlay: null,
+                filter: null
+            },
+            {
+                id: 6,
+                image: 'assets/scene-06-content-creator.png',
+                animation: 'anim-zoom-in',
+                transition: 'cut',
+                text: { content: 'Wait, do that again', style: 'text-comedy', delay: 1000 },
+                overlay: null,
+                filter: null
+            },
+            {
+                id: 7,
+                image: 'assets/scene-07-panicker.png',
+                animation: 'anim-vibrate',
+                transition: 'crossfade',
+                text: { content: 'MA, SOMEONE IS DYING', style: 'text-panicker', delay: 500 },
+                overlay: null,
+                filter: null
+            },
+            {
+                id: 8,
+                image: 'assets/scene-08-carrying.png',
+                animation: 'anim-pan-right',
+                transition: 'cut',
+                text: null,
+                overlay: null,
+                filter: null
+            },
+            {
+                id: 9,
+                image: 'assets/scene-09-hospital-1.png',
+                animation: 'anim-zoom-in',
+                transition: 'cut',
+                text: { content: 'Full.', style: 'text-rejection', delay: 500 },
+                overlay: null,
+                filter: null
+            },
+            {
+                id: 10,
+                image: 'assets/scene-10-hospital-2.png',
+                animation: 'anim-zoom-in',
+                transition: 'cut',
+                text: { content: 'No trauma center.', style: 'text-rejection', delay: 500 },
+                overlay: null,
+                filter: null
+            },
+            {
+                id: 11,
+                image: 'assets/scene-11-hospital-3.png',
+                animation: 'anim-zoom-in',
+                transition: 'fade',
+                text: null,
+                overlay: 'sign',
+                filter: 'desaturate'
+            },
+            {
+                id: 12,
+                image: 'assets/scene-12-defeat.png',
+                animation: 'anim-zoom-out',
+                transition: 'fade-slow',
+                text: null,
+                overlay: null,
+                filter: 'full-desaturate'
+            },
+            {
+                id: 13,
+                image: null,
+                animation: null,
+                transition: 'fade',
+                text: { content: 'stats', style: 'text-stats', delay: 0 },
+                overlay: null,
+                filter: null,
+                stats: [
+                    { text: 'That was a skit.', emphasis: true },
+                    { text: 'But across Southeast Asia — that\'s reality.', emphasis: true },
+                    { text: 'In Jakarta, 75% of emergency ambulance responses\ntake over 30 minutes.', emphasis: false },
+                    { text: 'Only 9% of trauma patients in Indonesia reach hospital\nby ambulance. Most are carried on motorbikes.', emphasis: false },
+                    { text: 'Over 70% of the world\'s population cannot access\nsafe, timely emergency surgical care.', emphasis: false },
+                    { text: 'The first hospital you reach isn\'t always the right one.\nAnd when it\'s not — that\'s a life.', emphasis: true }
+                ]
+            },
+            {
+                id: 14,
+                image: null,
+                animation: null,
+                transition: 'fade',
+                text: { content: 'What if one tap could replace all of that?', style: 'text-bridge', delay: 500 },
+                overlay: null,
+                filter: null
+            }
+        ];
+
+        // State
+        let currentScene = -1; // -1 = instructions showing
+        let statsIndex = 0;
+        let textTimeout = null;
+        let isTransitioning = false;
+
+        // DOM elements
+        const container = document.getElementById('scene-container');
+        const textOverlay = document.getElementById('text-overlay');
+        const phoneOverlay = document.getElementById('phone-overlay');
+        const signOverlay = document.getElementById('sign-overlay');
+        const transitionOverlay = document.getElementById('transition-overlay');
+        const sceneCounter = document.getElementById('scene-counter');
+        const progressBar = document.getElementById('progress-bar');
+        const instructions = document.getElementById('instructions');
+
+        // Preload all images
+        function preloadImages() {
+            scenes.forEach(scene => {
+                if (scene.image) {
+                    const img = new Image();
+                    img.src = scene.image;
+                }
+            });
+        }
+
+        // Clear current scene
+        function clearScene() {
+            // Clear text
+            textOverlay.innerHTML = '';
+            
+            // Clear overlays
+            phoneOverlay.classList.remove('visible');
+            signOverlay.classList.remove('visible');
+
+            // Clear text timeout
+            if (textTimeout) {
+                clearTimeout(textTimeout);
+                textTimeout = null;
+            }
+        }
+
+        // Show scene
+        function showScene(index, direction = 'forward') {
+            if (index < 0 || index >= scenes.length) return;
+            if (isTransitioning) return;
+
+            const scene = scenes[index];
+            const prevScene = currentScene >= 0 ? scenes[currentScene] : null;
+            
+            isTransitioning = true;
+            clearScene();
+
+            // Determine transition type
+            const transType = scene.transition || 'crossfade';
+            
+            if (transType === 'cut') {
+                performCut(scene, index);
+            } else if (transType === 'fade' || transType === 'fade-slow') {
+                performFade(scene, index, transType === 'fade-slow' ? 1500 : 800);
+            } else {
+                performCrossfade(scene, index);
+            }
+        }
+
+        function performCut(scene, index) {
+            // Brief black flash for hard cut
+            transitionOverlay.style.transition = 'opacity 0.05s';
+            transitionOverlay.style.opacity = '1';
+            
+            setTimeout(() => {
+                setSceneContent(scene, index);
+                transitionOverlay.style.transition = 'opacity 0.1s';
+                transitionOverlay.style.opacity = '0';
+                isTransitioning = false;
+            }, 80);
+        }
+
+        function performFade(scene, index, duration) {
+            transitionOverlay.style.transition = `opacity ${duration/2}ms ease`;
+            transitionOverlay.style.opacity = '1';
+            
+            setTimeout(() => {
+                setSceneContent(scene, index);
+                transitionOverlay.style.transition = `opacity ${duration/2}ms ease`;
+                transitionOverlay.style.opacity = '0';
+                isTransitioning = false;
+            }, duration / 2);
+        }
+
+        function performCrossfade(scene, index) {
+            setSceneContent(scene, index);
+            isTransitioning = false;
+        }
+
+        function setSceneContent(scene, index) {
+            currentScene = index;
+            statsIndex = 0;
+
+            // Update counter
+            sceneCounter.textContent = `Scene ${scene.id} / 14`;
+            progressBar.style.width = `${((index + 1) / scenes.length) * 100}%`;
+
+            // Remove all active images
+            document.querySelectorAll('.scene-image').forEach(img => {
+                img.classList.remove('active');
+                img.className = 'scene-image';
+            });
+
+            // Set image
+            if (scene.image) {
+                let imgEl = document.getElementById(`img-${index}`);
+                if (!imgEl) {
+                    imgEl = document.createElement('img');
+                    imgEl.id = `img-${index}`;
+                    imgEl.className = 'scene-image';
+                    imgEl.src = scene.image;
+                    container.appendChild(imgEl);
+                }
+                
+                // Apply animation
+                if (scene.animation) {
+                    imgEl.classList.add(scene.animation);
+                }
+                
+                // Apply filter
+                if (scene.filter) {
+                    imgEl.classList.add(scene.filter);
+                }
+                
+                // Make active
+                setTimeout(() => imgEl.classList.add('active'), 20);
+            }
+
+            // Handle overlays
+            if (scene.overlay === 'phone') {
+                // Show phone screen on black background
+                setTimeout(() => phoneOverlay.classList.add('visible'), 200);
+            } else if (scene.overlay === 'sign') {
+                setTimeout(() => signOverlay.classList.add('visible'), 800);
+            }
+
+            // Handle text
+            if (scene.text && scene.text.content !== 'stats') {
+                textTimeout = setTimeout(() => {
+                    showText(scene.text.content, scene.text.style);
+                }, scene.text.delay || 0);
+            } else if (scene.text && scene.text.content === 'stats') {
+                // Show first stat
+                setTimeout(() => {
+                    showStat(scene.stats[0]);
+                }, 500);
+            }
+        }
+
+        function showText(content, style) {
+            const el = document.createElement('div');
+            el.className = `overlay-text ${style}`;
+            el.textContent = content;
+            textOverlay.appendChild(el);
+            
+            // Trigger animation
+            setTimeout(() => el.classList.add('visible'), 50);
+        }
+
+        function showStat(stat) {
+            textOverlay.innerHTML = '';
+            const el = document.createElement('div');
+            el.className = `overlay-text text-stats${stat.emphasis ? ' emphasis' : ''}`;
+            el.style.whiteSpace = 'pre-line';
+            el.textContent = stat.text;
+            textOverlay.appendChild(el);
+            
+            setTimeout(() => el.classList.add('visible'), 50);
+        }
+
+        // Navigation
+        function nextScene() {
+            if (currentScene === -1) {
+                // First scene
+                instructions.classList.add('hidden');
+                showScene(0);
+                return;
+            }
+
+            const scene = scenes[currentScene];
+            
+            // Handle stats progression
+            if (scene.stats && statsIndex < scene.stats.length - 1) {
+                statsIndex++;
+                showStat(scene.stats[statsIndex]);
+                return;
+            }
+
+            // Go to next scene
+            if (currentScene < scenes.length - 1) {
+                showScene(currentScene + 1);
+            }
+        }
+
+        function prevScene() {
+            if (currentScene <= 0) return;
+            
+            const scene = scenes[currentScene];
+            
+            // Handle stats going back
+            if (scene.stats && statsIndex > 0) {
+                statsIndex--;
+                showStat(scene.stats[statsIndex]);
+                return;
+            }
+
+            showScene(currentScene - 1, 'backward');
+        }
+
+        function jumpToScene(num) {
+            // num 1-9 maps to scene index 0-8, 0 maps to scene 9
+            let targetIndex = num === 0 ? 9 : num - 1;
+            if (targetIndex >= 0 && targetIndex < scenes.length) {
+                if (currentScene === -1) {
+                    instructions.classList.add('hidden');
+                }
+                showScene(targetIndex);
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'Space':
+                case 'ArrowRight':
+                    e.preventDefault();
+                    nextScene();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    prevScene();
+                    break;
+                case 'KeyF':
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen();
+                    } else {
+                        document.exitFullscreen();
+                    }
+                    break;
+                case 'KeyR':
+                    currentScene = -1;
+                    clearScene();
+                    container.innerHTML = '';
+                    instructions.classList.remove('hidden');
+                    transitionOverlay.style.opacity = '0';
+                    break;
+                case 'KeyH':
+                    document.body.classList.toggle('recording');
+                    break;
+                case 'KeyA':
+                    toggleAutoPlay();
+                    break;
+                case 'Digit1': case 'Digit2': case 'Digit3':
+                case 'Digit4': case 'Digit5': case 'Digit6':
+                case 'Digit7': case 'Digit8': case 'Digit9':
+                    jumpToScene(parseInt(e.code.replace('Digit', '')));
+                    break;
+                case 'Digit0':
+                    jumpToScene(0);
+                    break;
+            }
+        });
+
+        // Click/tap to advance
+        document.addEventListener('click', () => nextScene());
+
+        // Auto-play mode (press A to toggle)
+        let autoPlayInterval = null;
+        let autoPlayDelay = 3500; // ms between scene advances
+
+        function toggleAutoPlay() {
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+            } else {
+                autoPlayInterval = setInterval(() => {
+                    nextScene();
+                }, autoPlayDelay);
+            }
+        }
+
+        // Note: A key is handled in the main keydown handler above
+
+        // Initialize
+        preloadImages();
+    </script>
+</body>
+</html>
